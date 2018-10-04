@@ -80,7 +80,7 @@ class SpartaCatalog(object):
 				sizeratiospmean_200b, sizeratiosp87_spmean, massratiosp87_200b, massratiosp75_200b,
 				massratiospmean_200b, massratiosp87_spmean, uniformrands), usemask=False)
 	def calculate_mcf(self, markname, norm=True, normbinning=20, mdefchoice='200b', rbinning=[3,20,10],
-						pidchoice='upid', nrand=200, recalc=False, **kwargs):
+						pidchoice='upid', nrand=200, recalc=False, recalc_rand=False, **kwargs):
 		""" Calculate the marked correlation function given a mark. Stores
 			the results existing values. The normalization flag allows for
 			whether or not to normalize the input marks with ranks.
@@ -90,7 +90,7 @@ class SpartaCatalog(object):
 			for the marked correlation function.
 		"""
 		if hasattr(self, 'mcf_'+markname) and recalc==False:
-			print('Previously calculated this mark! Did you mean to include recalc==True?\n')
+			print('Previously calculated this mark! Did you mean to include recalc=True?\n')
 			return getattr(self, 'mcf_'+markname)
 		else:
 			mark = self.data['halo_'+markname][self.data['halo_'+pidchoice]==-1]
@@ -116,7 +116,7 @@ class SpartaCatalog(object):
 			pos = np.vstack((self.data['halo_x'][self.data['halo_'+pidchoice]==-1], self.data['halo_y'][self.data['halo_'+pidchoice]==-1], self.data['halo_z'][self.data['halo_'+pidchoice]==-1])).T
 
 			# check if we have calculated errors before:
-			if not hasattr(self, 'mcf_lowererr') or recalc==True:
+			if not hasattr(self, 'mcf_lowererr') or recalc_rand==True:
 				mcfn_rand = np.zeros((nstep, nrand))
 				for i in range(0, nrand):
 					randerr = np.random.permutation(self.data['err_rands'][self.data['halo_'+pidchoice]==-1])
