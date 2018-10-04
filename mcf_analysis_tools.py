@@ -1,5 +1,7 @@
 import numpy as np
 from numpy.lib.recfunctions import append_fields, merge_arrays
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import cm
 import halotools.mock_observables as mo
 import halotools.sim_manager as sm
 import scipy.stats as stats
@@ -114,7 +116,7 @@ class SpartaCatalog(object):
 			pos = np.vstack((self.data['halo_x'][self.data['halo_'+pidchoice]==-1], self.data['halo_y'][self.data['halo_'+pidchoice]==-1], self.data['halo_z'][self.data['halo_'+pidchoice]==-1])).T
 
 			# check if we have calculated errors before:
-			if not hasattr(self, 'mcf_lowererr'):
+			if not hasattr(self, 'mcf_lowererr') or recalc==True:
 				nrand = 200
 				mcfn_rand = np.zeros((nstep, nrand))
 				for i in range(0, nrand):
@@ -124,9 +126,30 @@ class SpartaCatalog(object):
 						num_threads=self.cores)-.5**2)/(1./12.)
 				self.mcf_uppererr = [np.percentile(mcfn_rand[i,:],98) for i in range(nstep)]
 				self.mcf_lowererr = [np.percentile(mcfn_rand[i,:],2) for i in range(nstep)]
+				self.mcf_rands = mcfn_rand
 
 			mcf_temp = mo.marked_tpcf(pos, 10**logbins, marks1=mark, period=self.lbox, normalize_by='number_counts',
 										weight_func_id=1, num_threads=self.cores)
 			mcfn_temp = (mcf_temp - .5**2)/(1./12.)
 			setattr(self,'mcf_'+markname, mcfn_temp) 
 			return mcfn_temp
+
+class PlotObject:
+	def __init__(self, *catalogs, **kwargs):
+		self.num_catalogs = len(catalogs)
+		self.__catlist = []
+		for cat in catalogs:
+			self.__catlist.append(cat)
+		print(f'{self.num_catalogs} catalogs ingested for plotting.')
+	def plot_mcf(self, haloprop):
+		color = iter(cm.Set1(np.linspace(0,1,9)))	
+		for cat in self.__catlist:
+			mcf = cat.calculate_mcf(haloprop)
+			binmids = cat.binmids_last
+			lowererr = cat.mcf_lowererr
+			uppererr = cat.mcf_uppererr
+			c=next(color)
+			plt.semilogx(binmids, mcf, c=c, linewidth=3.0)
+			plt.fill_between(binmids, lowererr, uppererr, color=c, alpha=0.05)
+		plt.xlabel(r'r')
+		plt.ylabel(r'$\mathcal{M}_{'+haloprop+'}$')
