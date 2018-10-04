@@ -80,7 +80,7 @@ class SpartaCatalog(object):
 				sizeratiospmean_200b, sizeratiosp87_spmean, massratiosp87_200b, massratiosp75_200b,
 				massratiospmean_200b, massratiosp87_spmean, uniformrands), usemask=False)
 	def calculate_mcf(self, markname, norm=True, normbinning=20, mdefchoice='200b', rbinning=[3,20,10],
-						pidchoice='upid', recalc=False):
+						pidchoice='upid', nrand=200, recalc=False, **kwargs):
 		""" Calculate the marked correlation function given a mark. Stores
 			the results existing values. The normalization flag allows for
 			whether or not to normalize the input marks with ranks.
@@ -117,7 +117,6 @@ class SpartaCatalog(object):
 
 			# check if we have calculated errors before:
 			if not hasattr(self, 'mcf_lowererr') or recalc==True:
-				nrand = 200
 				mcfn_rand = np.zeros((nstep, nrand))
 				for i in range(0, nrand):
 					randerr = np.random.permutation(self.data['err_rands'][self.data['halo_'+pidchoice]==-1])
@@ -135,16 +134,14 @@ class SpartaCatalog(object):
 			return mcfn_temp
 
 class PlotObject:
-	def __init__(self, *catalogs, **kwargs):
+	def __init__(self, *catalogs):
 		self.num_catalogs = len(catalogs)
-		self.__catlist = []
-		for cat in catalogs:
-			self.__catlist.append(cat)
+		self.__catlist = [cat for cat in catalogs]
 		print(f'{self.num_catalogs} catalogs ingested for plotting.')
-	def plot_mcf(self, haloprop):
+	def plot_mcf(self, haloprop, **kwargs):
 		color = iter(cm.Set1(np.linspace(0,1,9)))	
 		for cat in self.__catlist:
-			mcf = cat.calculate_mcf(haloprop)
+			mcf = cat.calculate_mcf(haloprop, **kwargs)
 			binmids = cat.binmids_last
 			lowererr = cat.mcf_lowererr
 			uppererr = cat.mcf_uppererr
@@ -152,4 +149,4 @@ class PlotObject:
 			plt.semilogx(binmids, mcf, c=c, linewidth=3.0)
 			plt.fill_between(binmids, lowererr, uppererr, color=c, alpha=0.05)
 		plt.xlabel(r'r')
-		plt.ylabel(r'$\mathcal{M}_{'+haloprop+'}$')
+		plt.ylabel(r'$\mathcal{M}$')
